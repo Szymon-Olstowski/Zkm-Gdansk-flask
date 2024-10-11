@@ -1,0 +1,7 @@
+Flask==2.0.1
+requests==2.25.1
+beautifulsoup4==4.9.3
+sqlite3==2.6.0
+feedparser==6.0.2
+geopy==2.2.0
+nominatim==0.5.0
