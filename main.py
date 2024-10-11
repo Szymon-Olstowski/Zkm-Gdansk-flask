@@ -260,4 +260,4 @@ async def rozklad():  # informacja filmu/live
 
 
 if __name__ == "__main__":
-    app.run(host="192.168.0.185")  # wprowadz adres ip komputera
+    app.run(host="127.0.0.1")  # wprowadz adres ip komputera
