@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+{% extends 'layout.html' %}
+
+{% block title %}Rozkład{% endblock %}
+
+
+{% block content %}
+
+<head>
+  <style>
+    .bigtest {
+      width: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <p>Rozkład autobusów i tramwajów</p>
+  <br>
+  <form action="{{url_for('rozklad')}}" method="post">
+    <input type="text" class='bigtest' name="link" placeholder="link" id="link" required>
+    <input type="submit" value="Wykonaj">
+    <form>
+      <br>
+      <p>
+        {% for test in tab %}
+        <t> {{test.godziny}}</t>
+        {% endfor %}
+      </p>
+</body>
+
+</html>
+{%endblock %}

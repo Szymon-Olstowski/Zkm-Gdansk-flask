@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{% endblock %}</title>
+  <style>
+    /* Add some basic styling to our page */
+
+    header {
+      background-color: greenyellow;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header a {
+      text-decoration: none;
+      color: blue;
+      margin: 0 10px;
+    }
+
+    header a:hover {
+      color: aquamarine;
+    }
+
+    .content {
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Strona ZKM Gdańsk</h1>
+    <b><a href="{{ url_for('test') }}"><i class="fas fa-home"></i>Strona Główna</a></b>
+    <b><a href="{{ url_for('rozklad') }}"><i class="fas fa-user-circle"></i>Rozkład jazdy</a></b>
+    <b><a href="{{ url_for('tabory') }}"><i class="fas fa-user-circle"></i>Informacja o pojazdach</a></b>
+    <b><a href="{{ url_for('lok_autobusu') }}"><i class="fas fa-user-circle"></i>Lokalizacja autobusu</a></b>
+    <b><a href="{{ url_for('przystanek') }}"><i class="fas fa-user-circle"></i>Przystanek</a></b>
+    <b><a href="{{ url_for('odjazdy') }}"><i class="fas fa-user-circle"></i>Aktualne odjazdy</a></b>
+
+  </header>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+
+</body>
+
+</html>
