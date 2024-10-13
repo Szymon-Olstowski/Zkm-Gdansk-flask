@@ -122,7 +122,7 @@ async def lok_autobusu():
         inf = r.json()
         nr = int(request.form["numer"])
         for jaz in inf["vehicles"]:
-            if nr == int(jaz["routeShortName"]):
+            if str(nr) == jaz["routeShortName"]:
                 latitude = jaz["lat"]
                 longitude = jaz["lon"]
                 point = Point(latitude, longitude)
