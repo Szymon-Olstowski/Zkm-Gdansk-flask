@@ -121,6 +121,7 @@ async def lok_autobusu():
         r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
         inf = r.json()
         nr = int(request.form["numer"])
+        found = False
         for jaz in inf["vehicles"]:
             if str(nr) == jaz["routeShortName"]:
                 latitude = jaz["lat"]
@@ -137,7 +138,69 @@ async def lok_autobusu():
                     lon=longitude,  # add lat and lon to the loak object
                 )
                 autobus.append(az)
+                found = True
+
+        if not found:
+            az = loak(
+                lina="Brak takiej lini albo nie kursuje w tym czasie",
+                nr_pojazdu=" ",
+                cel=" ",
+                adres=" ",
+                lat=" ",
+                lon=" ",
+            )
+            autobus.append(az)
+
     return render_template("lok_autous.html", autobus=autobus)
+
+
+class loaks:
+    def __init__(self, lina, nr_pojazdu, cel, adres, lat, lon):
+        self.lina: str = lina
+        self.nr_pojazdu: str = nr_pojazdu
+        self.cel: str = cel
+        self.adres: str = adres
+        self.lat: str = lat
+        self.lon: str = lon
+
+
+@app.route("/lok_numer_autobusu", methods=["GET", "POST"])
+async def lok_numer_autobusu():
+    autobuss: list[loaks] = []
+    if request.method == "POST" and "numer" in request.form:
+        r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
+        inf = r.json()
+        nr = int(request.form["numer"])
+        found = False
+        for jaz in inf["vehicles"]:
+            if str(nr) == jaz["vehicleCode"]:
+                latitude = jaz["lat"]
+                longitude = jaz["lon"]
+                point = Point(latitude, longitude)
+                geocoder = Nominatim(user_agent="my-app")
+                address = geocoder.reverse(point)
+                az = loaks(
+                    lina=jaz["routeShortName"],
+                    nr_pojazdu=jaz["vehicleCode"],
+                    cel=jaz["headsign"],
+                    adres=address[0],
+                    lat=latitude,
+                    lon=longitude,  # add lat and lon to the loak object
+                )
+                autobuss.append(az)
+                found = True
+
+        if not found:
+            az = loaks(
+                lina="Brak takiego numeru pojazdu albo ten pojazd nie kursuje w tym czasie.",
+                nr_pojazdu=" ",
+                cel=" ",
+                adres=" ",
+                lat=" ",
+                lon=" ",
+            )
+            autobuss.append(az)
+    return render_template("lok_numer_autous.html", autobuss=autobuss)
 
 
 @app.route("/tabory", methods=["GET", "POST"])
@@ -216,8 +279,9 @@ async def tabory():  # informacja filmu/live
 
 
 class Tablica:
-    def __init__(self, godziny):
+    def __init__(self, godziny, link):
         self.godziny: str = godziny
+        self.link: str = link
 
 
 @app.route("/rozklad", methods=["GET", "POST"])
@@ -253,11 +317,77 @@ async def rozklad():  # informacja filmu/live
                 wyn = tags.get("aria-label")[
                     0:5
                 ]  # wyciągniecie z tekstu godziny odjazdu
-                tab.append(wyn)
-                a1 = Tablica(godziny=wyn)
-                tab.append(a1)
+                link_href = tags.get("href")  # pobierz link z atrybutu href
+                tab.append(
+                    Tablica(
+                        godziny=wyn, link=f"https://ztm.gda.pl/rozklady/{link_href}"
+                    )
+                )  # dodaj link do Tablica
     return render_template("rozklad.html", tab=tab)
 
 
+@app.route("/bus_stops", methods=["GET", "POST"])
+def bus_stops():
+    bus_stops = []
+    if request.method == "POST":
+        line_number = request.form["line_number"]
+        url = f"https://ztm.gda.pl/rozklady/linia-{line_number}.html"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        table = soup.find("table", {"role": "presentation"})
+
+        if table:
+            for row in table.find_all("tr")[1:]:  # skip the header row
+                for cell in row.find_all("td"):
+                    street = cell.find("div", {"class": "route_street"})
+                    street_name = street.text.strip() if street else ""
+                    for link in cell.find_all("a"):
+                        bus_stop = link.text.strip()
+                        href = link.get("href")
+                        full_link = f"https://ztm.gda.pl/rozklady/{href}"
+                        bus_stops.append(
+                            {
+                                "street": street_name,
+                                "bus_stop": bus_stop,
+                                "link": full_link,
+                            }
+                        )
+        else:
+            bus_stops.append(
+                {
+                    "street": "Error",
+                    "bus_stop": "No bus stops found for this line.",
+                    "link": "",
+                }
+            )
+
+    return render_template("bus_stops.html", bus_stops=bus_stops)
+
+
+from bs4 import BeautifulSoup
+import requests
+
+
+@app.route("/odjazy_przys", methods=["GET", "POST"])
+async def odjazdy_przys():
+    if request.method == "POST" and "link" in request.form:
+        link = request.form["link"]
+        page = requests.get(link)
+        soup = BeautifulSoup(page.text, "html.parser")
+        table = soup.find("table", {"class": "kurstab", "role": "presentation"})
+
+        if table:
+            rows = table.find_all("tr")
+            data = []
+            for row in rows[1:]:  # skip the header row
+                cols = row.find_all("td")
+                cols = [col.text.strip() for col in cols]
+                data.append(cols)
+            return render_template("odczyt_tabeli.html", data=data)
+        else:
+            return "Tabela nie znaleziona"
+    return render_template("odczyt_tabeli.html")
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1")  # wprowadz adres ip komputera
+    app.run(host="192.168.0.185")  # wprowadz adres ip komputera
