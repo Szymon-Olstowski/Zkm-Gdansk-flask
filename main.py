@@ -306,7 +306,6 @@ async def rozklad():  # informacja filmu/live
             licz = len(przy.text)
             liczw = licz - 20
             tekstowa = przy.text[0:liczw]
-            print(tekstowa)
             for meh in ty:
                 bober = meh.find_all("div", class_="m")
             tagi = []
@@ -317,10 +316,19 @@ async def rozklad():  # informacja filmu/live
                 wyn = tags.get("aria-label")[
                     0:5
                 ]  # wyciągniecie z tekstu godziny odjazdu
+                try:
+                    hours, minutes = map(int, wyn.split(":"))
+                    if hours >= 24:
+                        hours = hours % 24
+                    time_24h = f"{hours:02}:{minutes:02}"
+                except ValueError:
+                    time_24h = wyn
+
                 link_href = tags.get("href")  # pobierz link z atrybutu href
                 tab.append(
                     Tablica(
-                        godziny=wyn, link=f"https://ztm.gda.pl/rozklady/{link_href}"
+                        godziny=time_24h,
+                        link=f"https://ztm.gda.pl/rozklady/{link_href}",
                     )
                 )  # dodaj link do Tablica
     return render_template("rozklad.html", tab=tab)
@@ -364,8 +372,11 @@ def bus_stops():
     return render_template("bus_stops.html", bus_stops=bus_stops)
 
 
-from bs4 import BeautifulSoup
-import requests
+class colsy:
+    def __init__(self, nazwa, godzina, czas):
+        self.godzina: str = godzina
+        self.nazwa: str = nazwa
+        self.czas: str = czas
 
 
 @app.route("/odjazy_przys", methods=["GET", "POST"])
@@ -375,14 +386,17 @@ async def odjazdy_przys():
         page = requests.get(link)
         soup = BeautifulSoup(page.text, "html.parser")
         table = soup.find("table", {"class": "kurstab", "role": "presentation"})
-
         if table:
             rows = table.find_all("tr")
-            data = []
-            for row in rows[1:]:  # skip the header row
+            data: list[colsy] = []
+            for row in rows[0:]:
                 cols = row.find_all("td")
-                cols = [col.text.strip() for col in cols]
-                data.append(cols)
+                if len(cols) >= 3:
+                    nazwa = cols[0].text.strip()
+                    godzina = cols[1].text.strip()
+                    czas = cols[2].text.strip()
+                    data.append(colsy(nazwa=nazwa, godzina=godzina, czas=czas))
+
             return render_template("odczyt_tabeli.html", data=data)
         else:
             return "Tabela nie znaleziona"

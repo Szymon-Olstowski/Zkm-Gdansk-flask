@@ -12,12 +12,18 @@
         <input type="submit" value="Sprawdź">
     </form>
     <br>
-    <table>
-        {% for row in data %}
+    <table border="1">
         <tr>
-            {% for col in row %}
-            <td>{{ col }}</td>
-            {% endfor %}
+            <td>Przystanek</td>
+            <td>Odjazd</td>
+            <td>Czas przejazdu</td>
+
+        </tr>
+        {% for col in data %}
+        <tr>
+            <td>{{ col.nazwa }}</td>
+            <td>{{ col.godzina }}</td>
+            <td>{{ col.czas }}</td>
         </tr>
         {% endfor %}
     </table>
