@@ -47,11 +47,23 @@
 <body>
     <p>Atualne odjazdy</p>
     <p>Co 20 sekund dane sę odświęzają według ze systemu TRISTAR</p>
+    <p>Dodano odjzady na terenie Zkm Gdynia</p>
     <br>
     <form action="{{url_for('odjazdy')}}" method="post">
         <input type="text" name="przystanek" placeholder="przystanek" id="przystanek" required>
         <br>
         <input type="text" name="numer" placeholder="numer" id="numer" required>
+        <br>
+        <label>
+            <input type="radio" name="zaklad" value="1" required>
+            Zkm Gdynia
+        </label>
+        <br>
+        <label>
+            <input type="radio" name="zaklad" value="0" required>
+            Zkm Gdańsk
+        </label>
+        <br>
         <input type="submit" value="Sprawdź">
     </form>
     <br>

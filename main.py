@@ -30,13 +30,23 @@ async def odjazdy():
         if "przystanek" and "numer" in request.form:
             przystanek = request.form["przystanek"]
             numer = request.form["numer"]
-            cur.execute(
-                "SELECT * FROM Przystanki WHERE name = ? AND nr_przys= ?",
-                (
-                    przystanek,
-                    numer,
-                ),
-            )
+            wybrany_zaklad = request.form["zaklad"]
+            if int(wybrany_zaklad) == 0:
+                cur.execute(
+                    "SELECT * FROM Przystanki WHERE name = ? AND nr_przys= ?",
+                    (
+                        przystanek,
+                        numer,
+                    ),
+                )
+            if int(wybrany_zaklad) == 1:
+                cur.execute(
+                    "SELECT * FROM Przystanki_Gdy WHERE name = ? AND nr_przys= ?",
+                    (
+                        przystanek,
+                        numer,
+                    ),
+                )
             dane = cur.fetchone()
             if dane is None:
                 atz = t(
