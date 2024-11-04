@@ -6,6 +6,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style type="text/css">
+        #map {
+            width: 80%;
+            height: 200px;
+        }
+
         .tg {
             border-collapse: collapse;
             border-spacing: 0;
@@ -58,18 +63,19 @@
             <td class="tg-3esp">Lina</td>
             <td class="tg-3esp">Numer pojazdu</td>
             <td class="tg-3esp">Cel</td>
-            <td class="tg-3esp">Adres</td>
         </tr>
         {% for test in autobus %}
         <tr>
             <td class="tg-aweg">{{test.lina}}</td>
             <td class="tg-aweg">{{test.nr_pojazdu}}</td>
             <td class="tg-aweg">{{test.cel}}</td>
-            <td class="tg-aweg">{{test.adres}}</td>
         </tr>
         {% endfor %}
     </table>
     <br>
+    <div id="map">{{ map_html | safe }}</div>
+
+
 </body>
 
 </html>

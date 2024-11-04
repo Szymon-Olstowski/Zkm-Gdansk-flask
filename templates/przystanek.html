@@ -49,6 +49,17 @@
     <br>
     <form action="{{url_for('przystanek')}}" method="post">
         <input type="text" name="przystanek" placeholder="przystanek" id="przystanek" required>
+        <br>
+        <label>
+            <input type="radio" name="zaklad" value="1" required>
+            Zkm Gdynia
+        </label>
+        <br>
+        <label>
+            <input type="radio" name="zaklad" value="0" required>
+            Zkm Gdańsk
+        </label>
+        <br>
         <input type="submit" value="Sprawdź">
     </form>
     <br>

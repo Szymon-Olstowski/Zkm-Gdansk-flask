@@ -4,9 +4,8 @@ import urllib.request
 from datetime import datetime, timedelta
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-import requests
-from geopy import Point, Nominatim
 import sqlite3, feedparser
+import folium, requests
 
 app = Flask(__name__)
 
@@ -102,8 +101,19 @@ async def przystanek():
     cur = con.cursor()
     if request.method == "POST":
         if "przystanek" in request.form:
+            # dodac ststem w przypadu braku prsyanku zmien nazwe na inna polecenie sql i dodaj obsługe do zkm gdynia
             przystanek = request.form["przystanek"]
-            cur.execute("SELECT * FROM Przystanki WHERE name = ?", (przystanek,))
+            wybrany_zaklad = request.form["zaklad"]
+            if int(wybrany_zaklad) == 0:
+                cur.execute(
+                    "SELECT * FROM Przystanki WHERE name = ?",
+                    (przystanek,),
+                )
+            if int(wybrany_zaklad) == 1:
+                cur.execute(
+                    "SELECT * FROM Przystanki_Gdy WHERE name =?",
+                    (przystanek,),
+                )
             przys = cur.fetchall()
             con.close()  # Don't forget to close the connection
             return render_template("przystanek.html", przys=przys)
@@ -115,11 +125,10 @@ async def przystanek():
 
 
 class loak:
-    def __init__(self, lina, nr_pojazdu, cel, adres, lat, lon):
+    def __init__(self, lina, nr_pojazdu, cel, lat, lon):
         self.lina: str = lina
         self.nr_pojazdu: str = nr_pojazdu
         self.cel: str = cel
-        self.adres: str = adres
         self.lat: str = lat
         self.lon: str = lon
 
@@ -127,49 +136,54 @@ class loak:
 @app.route("/lok_autobusu", methods=["GET", "POST"])
 async def lok_autobusu():
     autobus: list[loak] = []
+    map = folium.Map(
+        location=[54.352, 18.646], zoom_start=12
+    )  # Ustawienie początkowej lokalizacji mapy
+
     if request.method == "POST" and "numer" in request.form:
         r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
         inf = r.json()
-        nr = int(request.form["numer"])
+        nr = request.form["numer"]
         found = False
         for jaz in inf["vehicles"]:
             if str(nr) == jaz["routeShortName"]:
                 latitude = jaz["lat"]
                 longitude = jaz["lon"]
-                point = Point(latitude, longitude)
-                geocoder = Nominatim(user_agent="my-app")
-                address = geocoder.reverse(point)
                 az = loak(
                     lina=jaz["routeShortName"],
                     nr_pojazdu=jaz["vehicleCode"],
                     cel=jaz["headsign"],
-                    adres=address[0],
                     lat=latitude,
-                    lon=longitude,  # add lat and lon to the loak object
+                    lon=longitude,
                 )
                 autobus.append(az)
                 found = True
+                # Dodanie punktu na mapie
+                folium.Marker(
+                    location=[latitude, longitude],
+                    popup=f'{jaz["routeShortName"]}<br>{jaz["vehicleCode"]}<br>{jaz["headsign"]}',
+                    icon=folium.Icon(color="blue"),
+                ).add_to(map)
 
         if not found:
             az = loak(
                 lina="Brak takiej lini albo nie kursuje w tym czasie",
                 nr_pojazdu=" ",
                 cel=" ",
-                adres=" ",
                 lat=" ",
                 lon=" ",
             )
             autobus.append(az)
-
-    return render_template("lok_autous.html", autobus=autobus)
+    # Zapisz mapę do pliku HTML
+    map_html = map._repr_html_()
+    return render_template("lok_autous.html", autobus=autobus, map_html=map_html)
 
 
 class loaks:
-    def __init__(self, lina, nr_pojazdu, cel, adres, lat, lon):
+    def __init__(self, lina, nr_pojazdu, cel, lat, lon):
         self.lina: str = lina
         self.nr_pojazdu: str = nr_pojazdu
         self.cel: str = cel
-        self.adres: str = adres
         self.lat: str = lat
         self.lon: str = lon
 
@@ -177,6 +191,9 @@ class loaks:
 @app.route("/lok_numer_autobusu", methods=["GET", "POST"])
 async def lok_numer_autobusu():
     autobuss: list[loaks] = []
+    map = folium.Map(
+        location=[54.352, 18.646], zoom_start=12
+    )  # Ustawienie początkowej lokalizacji mapy
     if request.method == "POST" and "numer" in request.form:
         r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
         inf = r.json()
@@ -186,18 +203,20 @@ async def lok_numer_autobusu():
             if str(nr) == jaz["vehicleCode"]:
                 latitude = jaz["lat"]
                 longitude = jaz["lon"]
-                point = Point(latitude, longitude)
-                geocoder = Nominatim(user_agent="my-app")
-                address = geocoder.reverse(point)
                 az = loaks(
                     lina=jaz["routeShortName"],
                     nr_pojazdu=jaz["vehicleCode"],
                     cel=jaz["headsign"],
-                    adres=address[0],
                     lat=latitude,
                     lon=longitude,  # add lat and lon to the loak object
                 )
                 autobuss.append(az)
+                # Dodanie punktu na mapie
+                folium.Marker(
+                    location=[latitude, longitude],
+                    popup=f'{jaz["routeShortName"]}<br>{jaz["vehicleCode"]}<br>{jaz["headsign"]}',
+                    icon=folium.Icon(color="blue"),
+                ).add_to(map)
                 found = True
 
         if not found:
@@ -205,12 +224,16 @@ async def lok_numer_autobusu():
                 lina="Brak takiego numeru pojazdu albo ten pojazd nie kursuje w tym czasie.",
                 nr_pojazdu=" ",
                 cel=" ",
-                adres=" ",
                 lat=" ",
                 lon=" ",
             )
             autobuss.append(az)
-    return render_template("lok_numer_autous.html", autobuss=autobuss)
+    # Zapisz mapę do pliku HTML
+    map_html = map._repr_html_()
+
+    return render_template(
+        "lok_numer_autous.html", autobuss=autobuss, map_html=map_html
+    )
 
 
 @app.route("/tabory", methods=["GET", "POST"])
