@@ -7,7 +7,7 @@
  - przystanek lokazlizuje przystanki za podaniem nazwy przystanku
  - aktualne odjazdy ,które wytszukuje aktualne odjazdy za podanie nazwę przystanku i numer przystanku
  - lokalizacja pojazdu po nr pojazdu za pomocą podania nr pojazdu
- - zazwy przystanków po doanu numer lini podaje listę prsytanków
+ - nazwy przystanków po doanu numer lini podaje listę prsytanków
  - odjazd z przystanków podaje dokładne przejazd przez przystanku za podanie linku danego przystanku i godziny odjazdu z dowolnego przystanku na linii
  Żeby korzystać z tego należy pobrac pakiety za pomoca:
  pip install -r requirements.txt
