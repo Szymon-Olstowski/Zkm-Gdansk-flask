@@ -23,6 +23,10 @@ class t:
 @app.route("/odjazdy", methods=["GET", "POST"])
 async def odjazdy():
     at: list[t] = []
+    bounds = []
+    map = folium.Map(
+        location=[54.352, 18.646], zoom_start=12
+    )  # Ustawienie początkowej lokalizacji mapy
     con = sqlite3.connect("zkm.db")
     cur = con.cursor()
     if request.method == "POST":
@@ -58,10 +62,25 @@ async def odjazdy():
                 )
                 at.append(atz)
             else:
+                if dane[4] == "BUS":
+                    icon_path = "bus.png"
+                if dane[4] == "TRAM":
+                    icon_path = "tram.png"
+                if dane[4] == "BUS_TRAM":
+                    icon_path = "bus&tram.png"
+                folium.Marker(
+                    location=[dane[2], dane[3]],
+                    popup=f"{dane[0]}<br>{dane[5]}",
+                    icon=folium.CustomIcon(icon_image=icon_path),
+                ).add_to(map)
+                bounds.append([dane[2], dane[3]])
                 x = requests.get(
-                    f"https://ckan2.multimediagdansk.pl/departures?stopId={dane[5]}"
+                    f"https://ckan2.multimediagdansk.pl/departures?stopId={dane[6]}"
                 )
                 odj = x.json()
+                print(odj)
+                r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
+                inf = r.json()
                 for odja in odj["departures"]:
                     rozklad_odj_iso = odja["theoreticalTime"]
                     odj_akt_iso = odja["estimatedTime"]
@@ -71,6 +90,23 @@ async def odjazdy():
                     odj_akt_dt += timedelta(hours=2)
                     rozklad_odj_new = rozklad_odj_dt
                     odj_akt_new = odj_akt_dt
+                    # testowwnie do lokazlacji autobusu po nr pojazdu
+
+                    if odja["vehicleCode"] != "None":
+                        for jaz in inf["vehicles"]:
+                            if str(odja["vehicleCode"]) == jaz["vehicleCode"]:
+                                latitude = jaz["lat"]
+                                longitude = jaz["lon"]
+                                # Dodanie punktu na mapie
+                                folium.Marker(
+                                    location=[latitude, longitude],
+                                    popup=f'{jaz["routeShortName"]}<br>{jaz["vehicleCode"]}<br>{jaz["headsign"]}',
+                                    icon=folium.Icon(color="blue"),
+                                ).add_to(map)
+                                bounds.append([latitude, longitude])
+                            if bounds:
+                                map.fit_bounds(bounds)
+                    # koniec
                     if odja["delayInSeconds"] is not None:
                         d = odja["delayInSeconds"]
                         minuty = d // 60
@@ -87,7 +123,8 @@ async def odjazdy():
                         delay=delay_str,
                     )
                     at.append(atz)
-    return render_template("odjazd.html", at=at)
+    map_html = map._repr_html_()
+    return render_template("odjazd.html", at=at, map_html=map_html)
 
 
 @app.route("/")
@@ -97,11 +134,15 @@ async def test():  # informacja kanału
 
 @app.route("/przystanek", methods=["GET", "POST"])
 async def przystanek():
+    map = folium.Map(
+        location=[54.352, 18.646], zoom_start=12
+    )  # Ustawienie początkowej lokalizacji mapy
+    bounds = []
     con = sqlite3.connect("zkm.db")
     cur = con.cursor()
     if request.method == "POST":
         if "przystanek" in request.form:
-            # dodac ststem w przypadu braku prsyanku zmien nazwe na inna polecenie sql i dodaj obsługe do zkm gdynia
+
             przystanek = request.form["przystanek"]
             wybrany_zaklad = request.form["zaklad"]
             if int(wybrany_zaklad) == 0:
@@ -115,13 +156,28 @@ async def przystanek():
                     (przystanek,),
                 )
             przys = cur.fetchall()
+            for przst in przys:
+                latitude = przst[2]
+                longitude = przst[3]
+                # Dodanie punktu na mapie
+                folium.Marker(
+                    location=[latitude, longitude],
+                    popup=f"{przst[0]}<br>{przst[5]}",
+                    icon=folium.Icon(color="blue"),
+                ).add_to(map)
+                bounds.append([latitude, longitude])
+            if bounds:
+                map.fit_bounds(bounds)
             con.close()  # Don't forget to close the connection
-            return render_template("przystanek.html", przys=przys)
+            map_html = map._repr_html_()
+            return render_template("przystanek.html", przys=przys, map_html=map_html)
         else:
             con.close()  # Don't forget to close the connection
             return "Error: przystanek field not found in request form", 400
     con.close()  # Don't forget to close the connection
-    return render_template("przystanek.html")
+    # Zapisz mapę do pliku HTML
+    map_html = map._repr_html_()
+    return render_template("przystanek.html", map_html=map_html)
 
 
 class loak:
@@ -136,6 +192,7 @@ class loak:
 @app.route("/lok_autobusu", methods=["GET", "POST"])
 async def lok_autobusu():
     autobus: list[loak] = []
+    bounds = []
     map = folium.Map(
         location=[54.352, 18.646], zoom_start=12
     )  # Ustawienie początkowej lokalizacji mapy
@@ -164,7 +221,9 @@ async def lok_autobusu():
                     popup=f'{jaz["routeShortName"]}<br>{jaz["vehicleCode"]}<br>{jaz["headsign"]}',
                     icon=folium.Icon(color="blue"),
                 ).add_to(map)
-
+                bounds.append([latitude, longitude])
+            if bounds:
+                map.fit_bounds(bounds)
         if not found:
             az = loak(
                 lina="Brak takiej lini albo nie kursuje w tym czasie",
@@ -191,6 +250,7 @@ class loaks:
 @app.route("/lok_numer_autobusu", methods=["GET", "POST"])
 async def lok_numer_autobusu():
     autobuss: list[loaks] = []
+    bounds = []
     map = folium.Map(
         location=[54.352, 18.646], zoom_start=12
     )  # Ustawienie początkowej lokalizacji mapy
@@ -217,6 +277,9 @@ async def lok_numer_autobusu():
                     popup=f'{jaz["routeShortName"]}<br>{jaz["vehicleCode"]}<br>{jaz["headsign"]}',
                     icon=folium.Icon(color="blue"),
                 ).add_to(map)
+                bounds.append([latitude, longitude])
+            if bounds:
+                map.fit_bounds(bounds)
                 found = True
 
         if not found:

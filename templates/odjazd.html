@@ -9,6 +9,11 @@
 
 <head>
     <style type="text/css">
+        #map {
+            width: 80%;
+            height: 200px;
+        }
+
         .tg {
             border-collapse: collapse;
             border-spacing: 0;
@@ -48,6 +53,7 @@
     <p>Atualne odjazdy</p>
     <p>Co 20 sekund dane sę odświęzają według ze systemu TRISTAR</p>
     <p>Dodano odjzady na terenie Zkm Gdynia</p>
+    <p>Lokalizaowanie pojazdów działa tylko na terenie ZKM Gdańsk</p>
     <br>
     <form action="{{url_for('odjazdy')}}" method="post">
         <input type="text" name="przystanek" placeholder="przystanek" id="przystanek" required>
@@ -90,6 +96,8 @@
 
         {% endfor %}
     </table>
+    <br>
+    <div id="map">{{ map_html | safe }}</div>
 </body>
 
 </html>

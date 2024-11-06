@@ -9,6 +9,11 @@
 
 <head>
     <style type="text/css">
+        #map {
+            width: 80%;
+            height: 200px;
+        }
+
         .tg {
             border-collapse: collapse;
             border-spacing: 0;
@@ -68,21 +73,21 @@
             <td class="tg-3esp">Nazwa przystanku</td>
             <td class="tg-3esp">Numer przysatnku</td>
             <td class="tg-3esp">Miasto</td>
-            <td class="tg-3esp">Ulica</td>
             <td class="tg-3esp">Typ</td>
 
         </tr>
         {% for test in przys %}
         <tr>
             <td class="tg-aweg">{{test[0]}}</td>
-            <td class="tg-aweg">{{test[4]}}</td>
+            <td class="tg-aweg">{{test[5]}}</td>
             <td class="tg-aweg">{{test[1]}}</td>
-            <td class="tg-aweg">{{test[2]}}</td>
-            <td class="tg-aweg">{{test[3]}}</td>
+            <td class="tg-aweg">{{test[4]}}</td>
         </tr>
 
         {% endfor %}
     </table>
+    <br>
+    <div id="map">{{ map_html | safe }}</div>
 </body>
 
 </html>
