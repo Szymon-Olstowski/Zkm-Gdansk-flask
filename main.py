@@ -78,7 +78,6 @@ async def odjazdy():
                     f"https://ckan2.multimediagdansk.pl/departures?stopId={dane[6]}"
                 )
                 odj = x.json()
-                print(odj)
                 r = requests.get("https://ckan2.multimediagdansk.pl/gpsPositions?v=2")
                 inf = r.json()
                 for odja in odj["departures"]:
